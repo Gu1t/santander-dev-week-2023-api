@@ -40,7 +40,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User create(User userToCreate) {
         ofNullable(userToCreate).orElseThrow(() -> new BusinessException("User to create must not be null."));
-        ofNullable(userToCreate.getAccount()).orElseThrow(() -> new BusinessException("User account must not be null."));
+        ofNullable(userToCreate.getAccount())
+                .orElseThrow(() -> new BusinessException("User account must not be null."));
         ofNullable(userToCreate.getCard()).orElseThrow(() -> new BusinessException("User card must not be null."));
 
         this.validateChangeableId(userToCreate.getId(), "created");
@@ -74,12 +75,17 @@ public class UserServiceImpl implements UserService {
     public void delete(Long id) {
         this.validateChangeableId(id, "deleted");
         User dbUser = this.findById(id);
-        this.userRepository.delete(dbUser);
-    }
+        if (dbUser != null) {
+            this.userRepository.delete(dbUser);
+        } else {
+            throw new BusinessException(String.format("User with ID %d does not exist.", id));
+        }
+}
 
     private void validateChangeableId(Long id, String operation) {
         if (UNCHANGEABLE_USER_ID.equals(id)) {
-            throw new BusinessException("User with ID %d can not be %s.".formatted(UNCHANGEABLE_USER_ID, operation));
+            throw new BusinessException(
+                    String.format("User with ID %d can not be %s.", UNCHANGEABLE_USER_ID, operation));
         }
     }
 }
